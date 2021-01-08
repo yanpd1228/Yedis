@@ -26,12 +26,13 @@ public:
 	~Server();
 
 public:
+    void setConnectionCallback(const ConnectionCallback& cb){m_NewConnectionCallback = cb; }
 	const std::string& hostport() const { return m_strHostPort; }
 	const std::string& name() const { return m_strName; }
 	EventLoop* getLoop() const { return m_ptrLoop; }
     typedef std::map<std::string, TcpConnectionPtr> ConnectionMap;
-    void Start(int nWorkThreadCount);
-    void NewConnection(int nSockfd, SocketAddr& peerAdder);
+    void start(int nWorkThreadCount);
+    void newConnection(int nSockfd, SocketAddr& peerAdder);
     void removeConnection(const TcpConnectionPtr& conn);
     void removeConnectionInLoop(const TcpConnectionPtr& conn);
 private:

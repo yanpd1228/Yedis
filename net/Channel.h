@@ -8,10 +8,10 @@
 #include "EventLoop.h"
 #include "../base/Platform.h"
 class EventLoop;
+typedef std::function<void()> EventCallback;
 class Channel
 {
 public:
-	typedef std::function<void()> EventCallback;
 	Channel(EventLoop* loop, int fd);
 	~Channel();
 	void HandleEvent();
@@ -35,7 +35,7 @@ public:
 	int fd() const { return m_nSockfd; }
 	int events() const { return m_nEvents; }
 	void setRevents(int revt) { m_nEvents = revt; }  // used by pollers
-	void addRevents(int revt) { m_nRevents |= revt; } // used by pollers
+	void addRevents(int revt) { m_nEvents |= revt; } // used by pollers
 	bool isNoneEvent() const { return m_nEvents == kNoneEvent; }
 
 	bool enableReading();
@@ -67,7 +67,6 @@ private:
 	const int                   m_nSockfd;
 
 	int                         m_nEvents;
-	int                         m_nRevents; // it's the received event types of epoll or poll
 	int                         m_nIndex; // used by Poller.
 
 	std::weak_ptr<void>         tie_;

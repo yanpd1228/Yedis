@@ -1,13 +1,18 @@
 #include "TcpConnection.h"
 #include "Poller.h"
-#include <bits/c++config.h>
+#include <functional>
+#include <memory>
 
 TcpConnection::TcpConnection(EventLoop* loop, int sockfd)
 {
     m_name = "";
     m_ptrLoop = loop;
     m_State = kConnecting;
-    m_ptrChannel.reset(new Channel(loop, sockfd));
+    m_ptrChannel = std::make_shared<Channel>(loop, sockfd);
+    m_ptrChannel->setReadCallback(std::bind(&TcpConnection::handleRead, this));
+    m_ptrChannel->setWriteCallback(std::bind(&TcpConnection::handleWrite, this));
+    m_ptrChannel->setCloseCallback(std::bind(&TcpConnection::handleClose, this));
+    m_ptrChannel->setErrorCallback(std::bind(&TcpConnection::handleClose,this));
     
 }
 
@@ -23,7 +28,7 @@ void TcpConnection::connectEstablished()
         return;
     }
     setState(kConnected);
-    m_ptrChannel->tie(shared_from_this());
+    //m_ptrChannel->tie(shared_from_this());
     if(!m_ptrChannel->enableReading())
     {
         handleClose();
@@ -59,6 +64,27 @@ void TcpConnection::handleClose()
     m_CloseCallback(callBack);
 }
 
+void TcpConnection::handleRead()
+{
+    m_ptrLoop->assertInLoopThread();
+    int nReadError = 0;
+    int32_t nRead = m_InputBuffer.readFd(m_ptrChannel->fd(), &nReadError);
+    if(nRead > 0)
+    {
+        m_MessageCallback(shared_from_this(), &m_InputBuffer);
+    }
+}
+
+void TcpConnection::handleWrite()
+{
+    m_ptrLoop->assertInLoopThread();
+    if(m_ptrChannel->isWriting())
+    {
+        int32_t nWrite = m_ptrSocket->Write(m_ptrChannel->fd(),m_OutputBuffer->peek(),m_OutputBuffer->readableBytes());
+
+    }
+}
+
 void TcpConnection::send(const void* data, int nLength)
 {
     if(m_State == kConnected)
@@ -69,7 +95,11 @@ void TcpConnection::send(const void* data, int nLength)
         }
         else
         {
-
+            std::string strMessage(static_cast<const char*>(data),nLength);
+            m_ptrLoop->runInLoop(
+                std::bind(static_cast<void (TcpConnection::*)(const string&)>(&TcpConnection::sendInLoop),
+                    this,   
+                    strMessage));
         }
     }
 }

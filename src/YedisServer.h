@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include "Server.h"
+#include "YedisSession.h"
 class YedisServer final
 {
 public:
@@ -12,7 +13,7 @@ public:
     ~YedisServer();
 
 public:
-    bool init(const char* ip, short port, EventLoop* lopp);
+    bool init(const std::string ip, const std::string port, EventLoop* loop);
 
     void uninit();
 
@@ -22,10 +23,10 @@ public:
 
 private:
 
-    std::shared_ptr<Server>                m_ptrServer;
-    std::list<std::shared_ptr<TcpSession>> m_listSessions;         
-    std::string                            m_strHostPort;
-    std::string                            m_strHostPort;
+    std::shared_ptr<Server>                  m_ptrServer;
+    std::list<std::shared_ptr<YedisSession>> m_listSessions;         
+    std::string                              m_strHostPort;
+    //std::string                              m_strHostPort;
 
 };
 #endif //!_YPD_YEDIS_SERVER_H_

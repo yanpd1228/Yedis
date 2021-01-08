@@ -77,6 +77,7 @@ public:
 
     int32_t Write(SOCKET sockfd, const void* buf, int32_t count);
 
+    ssize_t Readv(int sockfd, const struct iovec* iov, int iovcnt);
 
 	void close(SOCKET sockfd);
 

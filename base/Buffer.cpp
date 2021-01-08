@@ -24,7 +24,7 @@ size_t  Buffer::readFd(int fd, int* savedErrno)
 	// when there is enough space in this buffer, don't read into extrabuf.
 	// when extrabuf is used, we read 128k-1 bytes at most.
 	const int iovcnt = (writable < sizeof extrabuf) ? 2 : 1;
-	const ssize_t n = m_Sockets.Read(fd, vec, iovcnt);
+	const ssize_t n = m_Sockets.Readv(fd, vec, iovcnt);
 #else
 	const int32_t n = sockets::read(fd, extrabuf, sizeof(extrabuf));
 #endif

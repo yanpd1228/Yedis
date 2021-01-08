@@ -1,16 +1,17 @@
 #include "Server.h"
 #include "SocketAddr.h"
 #include "EventLoop.h"
+#include "YedisServer.h"
 
 EventLoop g_mainLoop;
 
 
 int main(int argc, char* argv[])
 {
-    SocketAddr sockaddr("0.0.0.0:9900");
+    std::string strHost("0.0.0.0");
     
-    std::shared_ptr<Server> ptrServer = std::make_shared<Server>(&g_mainLoop, sockaddr, "test"); 
-    ptrServer->Start(6);
+    YedisServer yeServer;    
+    yeServer.init(strHost, "9900", &g_mainLoop);
 
     g_mainLoop.loop();
 

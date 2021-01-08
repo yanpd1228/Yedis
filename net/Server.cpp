@@ -29,7 +29,7 @@ Server::Server(EventLoop* loop,
 {
     m_nStarted = 0;
     m_ptrAccepNewConn.reset(new AcceptNew(loop,listenAddr,option));
-    m_ptrAccepNewConn->setNewConnectionCallback((std::bind(&Server::NewConnection, this, std::placeholders::_1, std::placeholders::_2)));
+    m_ptrAccepNewConn->setNewConnectionCallback((std::bind(&Server::newConnection, this, std::placeholders::_1, std::placeholders::_2)));
     m_ptrLoop = loop;
     unsigned short shPort = listenAddr.GetPort();
     m_strHostPort = std::to_string(shPort);
@@ -45,7 +45,7 @@ Server::~Server()
 }
     
 
-void Server::Start(int nWorkThreadCount)
+void Server::start(int nWorkThreadCount)
 {
     if(m_nStarted == 0)
     {
@@ -58,10 +58,15 @@ void Server::Start(int nWorkThreadCount)
     }
 }
 
-void Server::NewConnection(int nSockfd, SocketAddr &peerAdder)
+void Server::newConnection(int nSockfd, SocketAddr &peerAdder)
 {
     EventLoop* nextLoop = m_ptrEventLoopThreadPool->getNextLoop();
     TcpConnectionPtr newConnection(new TcpConnection(nextLoop, nSockfd));
+    char buf[32];
+    snprintf(buf, sizeof buf, ":%s#%d", peerAdder.ToString().c_str(), m_nNextConnId);
+    ++m_nNextConnId;
+    std::string strConnName = m_strName + buf;
+    m_mapConnections[strConnName] = newConnection; 
     newConnection->setConnectionCallBack(m_NewConnectionCallback);
     newConnection->setMessageCallBack(m_MessageCallback);
     newConnection->setCloseCallback(std::bind(&Server::removeConnection, this, std::placeholders::_1));

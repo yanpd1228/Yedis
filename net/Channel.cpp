@@ -8,7 +8,6 @@ const int Channel::kWriteEvent = XPOLLOUT;
 Channel::Channel(EventLoop* loop, int fd) : m_Loop(loop),
 m_nSockfd(fd),
 m_nEvents(0),
-m_nRevents(0),
 m_nIndex(-1),
 m_bTied(false)
 {
@@ -37,7 +36,7 @@ void Channel::HandleEvent()
 
 	if (m_nEvents & (XPOLLIN | XPOLLPRI | XPOLLRDHUP))
 	{
-		/* 当是侦听socket时，readCallback_指向Acceptor::handleRead */
+		/* 当是侦听socket时，readCallback_指向AcceptNew::handleRead */
 		/* 当是客户端socket时，调用TcpConnection::handleRead */
 		if (readCallback_)
 			readCallback_();

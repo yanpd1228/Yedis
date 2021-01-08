@@ -186,6 +186,14 @@ int32_t Sockets::Write(int sockfd, const void *buf, int32_t count)
 #endif
 }
 
+#ifndef _WIN32
+ssize_t Sockets::Readv(int sockfd, const struct iovec* iov, int iovcnt)
+{
+	return ::readv(sockfd, iov, iovcnt);
+}
+#endif
+
+
 void Sockets::close(SOCKET sockfd)
 {
 #ifdef _WIN32   

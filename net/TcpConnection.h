@@ -61,12 +61,14 @@ private:
     void sendInLoop(const std::string& strMessage);
     void sendInLoop(const void* data, std::size_t nLength);
     void handleClose();    
+    void handleRead();
+    void handleWrite();
 private:
 	EventLoop*                  m_ptrLoop;
     std::string                 m_name;
 	State                       m_State;
 	std::unique_ptr<Sockets>    m_ptrSocket;
-	std::unique_ptr<Channel>    m_ptrChannel;
+	std::shared_ptr<Channel>    m_ptrChannel;
 	const SocketAddr            m_LocalAddr;
 	const SocketAddr            m_PeerAddr;
 	ConnectionCallback          m_NewConnectionCallback;

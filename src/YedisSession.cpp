@@ -1,4 +1,6 @@
 #include "YedisSession.h"
+#include <memory>
+#include "Buffer.h"
 
 YedisSession::YedisSession(std::shared_ptr<TcpConnection> conn)
 {
@@ -16,17 +18,18 @@ void YedisSession::OnRead(const std::shared_ptr<TcpConnection>& conn, Buffer* bu
 {
     std::string strInputBuffer;
     strInputBuffer.append(buffer->peek(),buffer->readableBytes());
+    decodeMessage(strInputBuffer);
 }
 
 bool YedisSession::decodeMessage(const std::string& strRecv)
 {
-    std::string strEnd = strRecv.substr(strRecv.length() - 4);
-    if (strEnd != "\r\n\r\n")
+    std::string strEnd = strRecv.substr(strRecv.length() - 2);
+    if (strEnd != "\r\n")
     {
         return false;
     }
 
-    std::vector<string> veclines;
+    std::vector<std::string> veclines;
     Split(strRecv, veclines, "\r\n");
     if (veclines.size() < 1 || veclines[0].empty())
     {

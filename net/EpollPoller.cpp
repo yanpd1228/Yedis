@@ -29,7 +29,6 @@ void EPollPoller::poll(int timeoutMs, ChannelVec* activeChannels)
     int savedErrno = errno;
     if (numEvents > 0)
     {
-        //LOG_TRACE << numEvents << " events happended";
         fillActiveChannels(numEvents, activeChannels);
         if (static_cast<size_t>(numEvents) == m_vecEvents.size())
         {
@@ -54,7 +53,7 @@ void EPollPoller::fillActiveChannels(int numEvents, ChannelVec* activeChannels) 
 {
     for (int i = 0; i < numEvents; ++i)
     {
-        Channel* channel = static_cast<Channel*>(m_vecEvents[i].data.ptr);
+        Channel* channel = (Channel*)(m_vecEvents[i].data.ptr);
         int fd = channel->fd();
         ChannelMap::const_iterator it = mapChannels.find(fd);
         if (it == mapChannels.end() || it->second != channel)
@@ -71,11 +70,9 @@ bool EPollPoller::updateChannel(Channel* channel)
 	const int index = channel->index();
 	if (index == kNew || index == kDeleted)
 	{
-		// a new one, add with XEPOLL_CTL_ADD
 		int fd = channel->fd();
 		if (index == kNew)
 		{
-			//assert(channels_.find(fd) == channels_.end())
 			if (mapChannels.find(fd) != mapChannels.end())
 			{
 				return false;
@@ -87,13 +84,11 @@ bool EPollPoller::updateChannel(Channel* channel)
 		}
 		else // index == kDeleted
 		{
-			//assert(channels_.find(fd) != channels_.end());
 			if (mapChannels.find(fd) == mapChannels.end())
 			{
 				return false;
 			}
 
-			//assert(channels_[fd] == channel);
 			if (mapChannels[fd] != channel)
 			{
 				return false;
@@ -105,7 +100,6 @@ bool EPollPoller::updateChannel(Channel* channel)
 	}
 	else
 	{
-		// update existing one with XEPOLL_CTL_MOD/DEL
 		int fd = channel->fd();
 		if (mapChannels.find(fd) == mapChannels.end() || mapChannels[fd] != channel || index != kAdded)
 		{
