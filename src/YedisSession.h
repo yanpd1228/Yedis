@@ -7,13 +7,15 @@
 class YedisSession final
 {
 public:
-    YedisSession(std::shared_ptr<TcpConnection> conn);
+    YedisSession(std::weak_ptr<TcpConnection> conn);
     ~YedisSession();
 public:
-    void OnRead(const std::shared_ptr<TcpConnection>& conn, Buffer* buffer);
+    void onRead(const std::shared_ptr<TcpConnection>& conn, Buffer* buffer);
+    void send(const std::string strMessage);
 private:
-    bool decodeMessage(const std::string& strRecv);
-    void Split(const std::string& str, std::vector<std::string>& v, const char* delimiter);
+    void sendPackage(const char* p, int32_t length);
+private:
+    std::weak_ptr<TcpConnection>    m_weakPtrTempConn;
 };
 
 #endif //!_YPD_YEDIS_SESSION_H_

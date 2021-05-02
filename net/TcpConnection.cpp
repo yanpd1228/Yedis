@@ -80,7 +80,7 @@ void TcpConnection::handleWrite()
     m_ptrLoop->assertInLoopThread();
     if(m_ptrChannel->isWriting())
     {
-        int32_t nWrite = m_ptrSocket->Write(m_ptrChannel->fd(),m_OutputBuffer->peek(),m_OutputBuffer->readableBytes());
+        int32_t nWrite = m_ptrSocket->Write(m_ptrChannel->fd(),m_OutputBuffer.peek(),m_OutputBuffer.readableBytes());
 
     }
 }
@@ -97,9 +97,25 @@ void TcpConnection::send(const void* data, int nLength)
         {
             std::string strMessage(static_cast<const char*>(data),nLength);
             m_ptrLoop->runInLoop(
-                std::bind(static_cast<void (TcpConnection::*)(const string&)>(&TcpConnection::sendInLoop),
+                std::bind(static_cast<void (TcpConnection::*)(const std::string&)>(&TcpConnection::sendInLoop),
                     this,   
                     strMessage));
+        }
+    }
+}
+
+void TcpConnection::send(const std::string & message)
+{
+    if (m_State == kConnected)
+    {
+        if (m_ptrLoop->isInLoopThread())
+        {
+            sendInLoop(message);
+        }
+        else
+        {
+            m_ptrLoop->runInLoop(
+                std::bind(static_cast<void (TcpConnection::*)(const std::string&)>(&TcpConnection::sendInLoop),this,message));
         }
     }
 }

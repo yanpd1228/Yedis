@@ -1,10 +1,16 @@
 #include "YedisSession.h"
 #include <memory>
+#include <vector>
 #include "Buffer.h"
+#include "YedisParser.h"
+#include "YString.h"
+#include "YedisRegisterCmd.h"
+#include "YedisStore.h"
+#include "YedisCommand.h"
+#include "../base/ReplyBuffer.h"
 
-YedisSession::YedisSession(std::shared_ptr<TcpConnection> conn)
+YedisSession::YedisSession(std::weak_ptr<TcpConnection> conn) : m_weakPtrTempConn(conn)
 {
-
 
 }
 
@@ -14,74 +20,47 @@ YedisSession::~YedisSession()
 }
 
 
-void YedisSession::OnRead(const std::shared_ptr<TcpConnection>& conn, Buffer* buffer)
+void YedisSession::onRead(const std::shared_ptr<TcpConnection>& conn, Buffer* buffer)
 {
+    const char* ptr = buffer->peek();
+    const char* end = ptr + buffer->readableBytes();
     std::string strInputBuffer;
     strInputBuffer.append(buffer->peek(),buffer->readableBytes());
-    decodeMessage(strInputBuffer);
+    buffer->retrieve(buffer->readableBytes());
+    Yedis::YProtoParse parse;
+    parse.parseRequest(ptr, end);
+    std::vector<std::string> vecRes = parse.getParams();
+    if(vecRes.size() == 3 || vecRes.size() == 2)
+    {
+        ReplyBuffer replyBuffer;
+        //Yedis::YedisRegisterCmd cmd = Yedis::YedisRegisterCmd::getInstance();
+        Yedis::YCommand::getInstance().execCommand(vecRes, replyBuffer);
+        sendPackage(replyBuffer.readAddr(), replyBuffer.readableSize());
+    }
+    else
+    {
+        send("+OK\r\n");
+    }
 }
 
-bool YedisSession::decodeMessage(const std::string& strRecv)
+void YedisSession::send(const std::string strMessage)
 {
-    std::string strEnd = strRecv.substr(strRecv.length() - 2);
-    if (strEnd != "\r\n")
-    {
-        return false;
-    }
-
-    std::vector<std::string> veclines;
-    Split(strRecv, veclines, "\r\n");
-    if (veclines.size() < 1 || veclines[0].empty())
-    {
-        return false;
-    }
-    if (veclines[0] != "*")
-    {
-        return false;
-    }
-    std::size_t nPos = 0;
-
-    /* 最终，set name bert经过协议编码后：
-    *3\r\n$3\r\nset\r\n$4\r\nname\r\n$4\r\nbert\r\n
-    协议解析流程为：首先读*符号，发现有三个参数；然后读取第一个$符号，知道第一个参数有三个字符，继续往后读得到了set；
-    接着读取第二个$符号，知道该参数有四个字符，得到了name；
-    最后读取第三个$符号，该参数也有四个字符，得到了bert；*/
-    for(nPos; nPos < veclines.size(); nPos++)
-    {
-        if(veclines[nPos] != "*")
-        {
-            return false;
-        }
-        
-    }
-    
+    sendPackage(strMessage.c_str(), strMessage.length());
 }
 
-void YedisSession::Split(const std::string& str, std::vector<std::string>& v, const char* delimiter)
-{
-    if (delimiter == NULL || str.empty())
+void YedisSession::sendPackage(const char* p, int32_t length)
+{   
+    std::string srcbuf(p, length);
+
+    if (m_weakPtrTempConn.expired())
+    {
         return;
+    }
 
-    std::string buf = str;
-    size_t pos = std::string::npos;
-    std::string substr;
-    int delimiterlength = strlen(delimiter);
-    while (true)
+    std::shared_ptr<TcpConnection> conn = m_weakPtrTempConn.lock();
+    if (conn)
     {
-        pos = buf.find(delimiter);
-        if (pos != std::string::npos)
-        {
-            substr = buf.substr(0, pos);
-            if (!substr.empty())
-                v.push_back(substr);
-
-            buf = buf.substr(pos + delimiterlength);
-        }
-        else
-        {
-            if (!buf.empty())
-                v.push_back(buf);
-            break;
-        }           
+        conn->send(srcbuf);
     }
 }
+

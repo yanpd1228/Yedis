@@ -26,7 +26,7 @@ private:
     std::shared_ptr<Server>                  m_ptrServer;
     std::list<std::shared_ptr<YedisSession>> m_listSessions;         
     std::string                              m_strHostPort;
-    //std::string                              m_strHostPort;
+    std::mutex                               m_mutexForSession; 
 
 };
 #endif //!_YPD_YEDIS_SERVER_H_

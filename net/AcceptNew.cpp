@@ -37,8 +37,6 @@ void AcceptNew::handleRead()
     SocketAddr sockAddr(addr);
 	if (nConnfd >= 0)
 	{
-		//std::string hostport = std::to_string(htonl(addr.sin_port));
-		//newConnectionCallback_实际指向Server::newConnection(int sockfd, const InetAddress& peerAddr)
 		if (m_newConnectionCallback)
 		{
 			m_newConnectionCallback(nConnfd, sockAddr);

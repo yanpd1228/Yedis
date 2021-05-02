@@ -57,6 +57,7 @@ public:
     void connectDestroyed();
     bool Conncted(){return m_State == kConnected;}
     void send(const void* data,int nLength);
+    void send(const std::string& message);
 private:
     void sendInLoop(const std::string& strMessage);
     void sendInLoop(const void* data, std::size_t nLength);

@@ -36,8 +36,11 @@ void YedisServer::onConnection(std::shared_ptr<TcpConnection> conn)
     if(conn->connected())
     {
         std::shared_ptr<YedisSession> ptrYedisSession = std::make_shared<YedisSession>(conn);
-        conn->setMessageCallBack(std::bind(&YedisSession::OnRead,ptrYedisSession.get(),std::placeholders::_1,
-                    std::placeholders::_2));
+        conn->setMessageCallBack(std::bind(&YedisSession::onRead,ptrYedisSession.get(),std::placeholders::_1,std::placeholders::_2));
+        {
+            std::lock_guard<std::mutex> guard(m_mutexForSession);
+            m_listSessions.push_back(ptrYedisSession);
+        }
     }
 
 }
