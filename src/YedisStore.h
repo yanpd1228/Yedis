@@ -61,6 +61,7 @@ enum YError
     YError_busykey      = 19,
     YError_max,
 };
+
 struct YObject
 {
 public:

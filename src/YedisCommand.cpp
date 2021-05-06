@@ -35,6 +35,14 @@ bool YCommand::delCommand(const std::string& cmd)
 bool YCommand::execCommand(std::vector<std::string>& params, ReplyBuffer& replyBuffer)
 {
     const YedisCommand* temp = getCommand(params[0]);
+    if (!temp)
+    {
+        size_t oldSize = replyBuffer.readableSize();
+        std::string strError = "-ERR Unknown command\r\n";
+        replyBuffer.pushData(strError.c_str(), strError.size());
+        replyBuffer.readableSize() - oldSize;
+        return false;
+    }
     temp->handler(params, &replyBuffer);
     return true;
 }

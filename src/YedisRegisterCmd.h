@@ -1,6 +1,7 @@
 #ifndef _YEDIS_REGISTER_CMD_H_
 #define _YEDIS_REGISTER_CMD_H_
 #include "../base/AsyncLog.h"
+#include "YList.h"
 #include "YedisCommand.h"
 #include "YString.h"
 #include <list>
@@ -21,10 +22,10 @@ public:
     }
 public:
     void init();
-    //std::unique_ptr<YCommand>& getYcommand() { return m_ptrYCommand;}
 
 private:
-    std::list<std::shared_ptr<Ystring>> m_list;
+    std::list<std::shared_ptr<Ystring>> m_ptrYStringlist;
+    std::list<std::shared_ptr<YList>>   m_ptrYListlist;
 
 };
 }

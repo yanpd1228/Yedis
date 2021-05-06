@@ -59,7 +59,6 @@ YError Ystring::setCmd(const std::vector<std::string>& params, ReplyBuffer* repl
     setValue(params[1], params[2]);
     size_t oldSize = reply->readableSize();
     reply->pushData("+OK" CRLF, 5);
-    
     reply->readableSize() - oldSize;
     return YError_ok;
 }
@@ -70,6 +69,19 @@ YError Ystring::getCmd(const std::vector<std::string>& params, ReplyBuffer* repl
     YError err = YSTORE.getValueByType(params[1], value, YType_string);
     if (err != YError_ok)
     {
+        if (err == YError_notExist)
+        {
+            size_t oldSize = reply->readableSize();
+            reply->pushData("$-1" CRLF, 5);
+            reply->readableSize() - oldSize;
+        }
+        else
+        {
+            std::string strError = "-ERR no such key\r\n";
+            size_t oldSize = reply->readableSize();
+            reply->pushData(strError.c_str(), strError.size());
+            reply->readableSize() - oldSize;
+        }
         return err;  
     }
     std::string strValue = getDecodeString(value);
@@ -84,4 +96,24 @@ YError Ystring::getCmd(const std::vector<std::string>& params, ReplyBuffer* repl
     return err;
 
 }
+
+YError Ystring::setnxCmd(const std::vector<std::string>& params, ReplyBuffer* reply) const
+{
+    if(setValue(params[1], params[2], true))
+    {
+        const char* val = ":1\r\n";
+        size_t oldSize = reply->readableSize();
+        reply->pushData(val, 4);
+        reply->readableSize() - oldSize;
+    }
+    else
+    {
+        const char* val = ":0\r\n";
+        size_t oldSize = reply->readableSize();
+        reply->pushData(val, 4);
+        reply->readableSize() - oldSize;
+    }
+    return YError_ok;
+}
+
 }

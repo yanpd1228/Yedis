@@ -21,6 +21,7 @@ public:
 public:
     YError setCmd(const std::vector<std::string>& params, ReplyBuffer* reply) const;
     YError getCmd(const std::vector<std::string>& params, ReplyBuffer* reply) const;
+    YError setnxCmd(const std::vector<std::string>& params, ReplyBuffer* reply) const;
 };
 
 }

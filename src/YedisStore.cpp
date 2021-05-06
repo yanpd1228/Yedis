@@ -1,5 +1,6 @@
 #include "YedisStore.h"
 #include "YString.h"
+#include <list>
 
 namespace Yedis{
 
@@ -67,6 +68,14 @@ YObject YObject::createString(const std::string& value)
     }
 
     return obj;
+}
+
+YObject YObject::createList()
+{
+    YObject list(YType_list);
+    list.reset(new std::list<std::string>);
+
+    return list;
 }
 
 YObject YObject::createString(long val)
