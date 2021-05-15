@@ -4,13 +4,14 @@
 #include <string>
 #include <vector>
 #include <list>
+#include "YedisCommon.h"
 #include "YedisStore.h"
 #include "../base/ReplyBuffer.h"
 
 
 namespace Yedis
 {
-typedef std::function<Yedis::YError(const std::vector<std::string>& vecParam,ReplyBuffer* reply)> handleCallback;
+typedef std::function<YError(const std::vector<std::string>& vecParam,ReplyBuffer* reply)> handleCallback;
 
 struct YedisCommand
 {

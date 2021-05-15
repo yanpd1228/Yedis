@@ -1,7 +1,10 @@
 #include "YedisSession.h"
 #include <memory>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 #include "Buffer.h"
+#include "TaskManager.h"
 #include "YedisParser.h"
 #include "YString.h"
 #include "YedisRegisterCmd.h"
@@ -30,17 +33,21 @@ void YedisSession::onRead(const std::shared_ptr<TcpConnection>& conn, Buffer* bu
     Yedis::YProtoParse parse;
     parse.parseRequest(ptr, end);
     std::vector<std::string> vecRes = parse.getParams();
-    if(vecRes.size() == 3 || vecRes.size() == 2)
-    {
-        ReplyBuffer replyBuffer;
-        //Yedis::YedisRegisterCmd cmd = Yedis::YedisRegisterCmd::getInstance();
-        Yedis::YCommand::getInstance().execCommand(vecRes, replyBuffer);
-        sendPackage(replyBuffer.readAddr(), replyBuffer.readableSize());
-    }
-    else
-    {
-        send("+OK\r\n");
-    }
+    Yedis::connAndCmd sTemp;
+    sTemp.conn = m_weakPtrTempConn.lock();
+    sTemp.vecCmd = vecRes;
+    Yedis::TaskManager::producerTask(sTemp);
+    //if(vecRes.size() == 3 || vecRes.size() == 2 || vecRes.size() == 4)
+    //{
+    //    ReplyBuffer replyBuffer;
+    //    //Yedis::YedisRegisterCmd cmd = Yedis::YedisRegisterCmd::getInstance();
+    //    Yedis::YCommand::getInstance().execCommand(vecRes, replyBuffer);
+    //    sendPackage(replyBuffer.readAddr(), replyBuffer.readableSize());
+    //}
+    //else
+    //{
+    //    send("+OK\r\n");
+    //}
 }
 
 void YedisSession::send(const std::string strMessage)

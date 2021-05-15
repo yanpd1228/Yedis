@@ -1,10 +1,16 @@
 #include "YedisRegisterCmd.h"
+#include "YHash.h"
+#include "YSet.h"
 #include "YList.h"
+#include "YSortedSet.h"
 #include "YString.h"
 #include "YedisCommand.h"
+#include "YedisCommon.h"
 #include "YedisStore.h"
 #include <functional>
+#include <memory>
 #include <string>
+#include <vector>
 
 namespace Yedis
 {
@@ -19,8 +25,26 @@ YedisRegisterCmd::~YedisRegisterCmd()
 
 }
 
+YError YedisRegisterCmd::command(const std::vector<std::string> &params, ReplyBuffer *reply)
+{
+    if(params[0] == "COMMAND")
+    {
+        std::string strReply = "+OK\r\n";
+        reply->pushData(strReply.c_str(), strReply.size());
+    }
+    return YError_ok;
+}
+
 void YedisRegisterCmd::init()
 {
+    {
+        //注册comand命令
+        handleCallback commandHandler = std::bind(&Yedis::YedisRegisterCmd::command, this, std::placeholders::_1, std::placeholders::_2);
+        static YedisCommand retCommand;
+        retCommand.cmd = "COMMAND";
+        retCommand.handler = commandHandler;
+        YCommand::getInstance().addCommand("COMMAND", &retCommand);
+    }
     //string 相关命令
     { 
         std::shared_ptr<Ystring>  ptrYstring(new Ystring);
@@ -48,6 +72,7 @@ void YedisRegisterCmd::init()
 
         m_ptrYStringlist.push_back(ptrYstring);
     }
+
     //list相关命令
     {
         std::shared_ptr<YList> ptrYList(new YList);
@@ -96,7 +121,85 @@ void YedisRegisterCmd::init()
         retRpop.handler = rpopHandler;
         YCommand::getInstance().addCommand("RPOP", &retRpop);
 
+        //注册llen命令
+        handleCallback llenHandler =  std::bind(&Yedis::YList::llen, ptrYList.get(), std::placeholders::_1, std::placeholders::_2);
+        static YedisCommand retLlen;
+        retLlen.cmd = "LLEN";
+        retLlen.handler = llenHandler;
+        YCommand::getInstance().addCommand("LLEN", &retLlen);
+
+        //注册lrange命令
+        handleCallback lrangeHandler =  std::bind(&Yedis::YList::lrange, ptrYList.get(), std::placeholders::_1, std::placeholders::_2);
+        static YedisCommand retLrange;
+        retLrange.cmd = "LRANGE";
+        retLrange.handler = lrangeHandler;
+        YCommand::getInstance().addCommand("LRANGE", &retLrange);
+
         m_ptrYListlist.push_back(ptrYList);
+    }
+
+    //set 相关命令
+    {
+        std::shared_ptr<YSet> ptrYSet(new YSet);
+        //注册sadd命令
+        handleCallback saddHandler =  std::bind(&Yedis::YSet::sadd, ptrYSet.get(), std::placeholders::_1, std::placeholders::_2);
+        static YedisCommand retSetAdd;
+        retSetAdd.cmd = "SADD";
+        retSetAdd.handler = saddHandler;
+        YCommand::getInstance().addCommand("SADD", &retSetAdd);
+        
+        //注册scard命令
+        handleCallback scardHandler =  std::bind(&Yedis::YSet::scard, ptrYSet.get(), std::placeholders::_1, std::placeholders::_2);
+        static YedisCommand retSetScard;
+        retSetScard.cmd = "SCARD";
+        retSetScard.handler = scardHandler;
+        YCommand::getInstance().addCommand("SCARD", &retSetScard);
+
+        //注册smember命令
+        handleCallback smemberHandler =  std::bind(&Yedis::YSet::smember, ptrYSet.get(), std::placeholders::_1, std::placeholders::_2);
+        static YedisCommand retSetSmember;
+        retSetSmember.cmd = "SMEMBERS";
+        retSetSmember.handler = smemberHandler;
+        YCommand::getInstance().addCommand("SMEMBERS", &retSetSmember);
+
+        //注册spop命令
+        handleCallback spopHandler =  std::bind(&Yedis::YSet::spop, ptrYSet.get(), std::placeholders::_1, std::placeholders::_2);
+        static YedisCommand retSetSpop;
+        retSetSpop.cmd = "SPOP";
+        retSetSpop.handler = spopHandler;
+        YCommand::getInstance().addCommand("SPOP", &retSetSpop);
+
+        m_ptrYSetlist.push_back(ptrYSet);
+    }
+    //HASH相关命令
+    {
+        std::shared_ptr<YHash> ptrHash(new YHash);
+        //注册hget命令
+        handleCallback hgetHandler =  std::bind(&Yedis::YHash::hget, ptrHash.get(), std::placeholders::_1, std::placeholders::_2);
+        static YedisCommand HashHget;
+        HashHget.cmd = "HGET";
+        HashHget.handler = hgetHandler;
+        YCommand::getInstance().addCommand("HGET", &HashHget);
+
+        //注册hset命令
+        handleCallback hsetHandler =  std::bind(&Yedis::YHash::hset, ptrHash.get(), std::placeholders::_1, std::placeholders::_2);
+        static YedisCommand HashHset;
+        HashHset.cmd = "HSET";
+        HashHset.handler = hsetHandler;
+        YCommand::getInstance().addCommand("HSET", &HashHset);
+        m_ptrYHashlist.push_back(ptrHash);
+    }
+    //sortedset相关命令
+    {
+        std::shared_ptr<YSortedSet> ptrYSortedSet;
+        //注册zadd命令
+        handleCallback zaddHandler =  std::bind(&Yedis::YSortedSet::zadd, ptrYSortedSet.get(), std::placeholders::_1, std::placeholders::_2);
+        static YedisCommand SortedZadd;
+        SortedZadd.cmd = "ZADD";
+        SortedZadd.handler = zaddHandler;
+        YCommand::getInstance().addCommand("ZADD", &SortedZadd);
+
+        m_ptrYSortedSetlist.push_back(ptrYSortedSet); 
     }
 }
 

@@ -1,5 +1,9 @@
-#ifndef _YEDIS_m_vecStoreH_
-#define _YEDIS_m_vecStoreH_
+#ifndef _YEDIS_STORE_H_
+#define _YEDIS_STORE_H_
+#include "YHash.h"
+#include "YList.h"
+#include "YSet.h"
+#include "YSortedSet.h"
 #include <unordered_map>
 #include <unordered_set>
 #include <iostream>
@@ -7,106 +11,15 @@
 #include <list>
 #include <map>
 #include <set>
+#include "YString.h"
+#include "YedisCommon.h"
+
 namespace Yedis{
 
-static const int kLRUBits = 24;
-enum YType
-{
-    YType_invalid,
-    YType_string,
-    YType_list,
-    YType_set,
-    YType_sortedSet,
-    YType_hash,
-};
 
-enum YEncode
-{
-    YEncode_invalid,
-
-    YEncode_raw, // string
-    YEncode_int, // string as int
-
-    YEncode_list,
-    
-    YEncode_set,
-    YEncode_hash,
-    
-    YEncode_sset,
-};
-
-
-enum YError
-{
-    YError_nop       = -1,
-    YError_ok        = 0,
-    YError_type      = 1,
-    YError_exist     = 2,
-    YError_notExist  = 3,
-    YError_param     = 4,
-    YError_unknowCmd = 5,
-    YError_nan       = 6,
-    YError_syntax    = 7,
-    YError_dirtyExec = 8,
-    YError_watch     = 9,
-    YError_noMulti   = 10,
-    YError_invalidDB = 11,
-    YError_readonlySlave = 12,
-    YError_needAuth  = 13,
-    YError_errAuth   = 14,
-    YError_nomodule   = 15,
-    YError_moduleinit = 16,
-    YError_moduleuninit = 17,
-    YError_modulerepeat = 18,
-    YError_busykey      = 19,
-    YError_max,
-};
-
-struct YObject
-{
-public:
-    static uint32_t lruclock;
-
-    unsigned int type : 4;
-    unsigned int encoding : 4;
-    unsigned int lru : kLRUBits;
-
-    void* value;
-    
-    explicit
-    YObject(YType = YType_invalid);
-    ~YObject();
-
-    YObject(const YObject& obj) = delete;
-    YObject& operator= (const YObject& obj) = delete;
-    
-    YObject(YObject&& obj);
-    YObject& operator= (YObject&& obj);
-    
-    void clear();
-    void reset(void* newvalue = nullptr);
-    
-    static YObject createString(const std::string& value);
-    static YObject createString(long value);
-    static YObject createList();
-    static YObject createSet();
-    static YObject createSSet();
-    static YObject createHash();
-    
-    std::string*  castString()       const { return reinterpret_cast<std::string*>(value); }
-    std::list<std::string>*    castList()         const { return reinterpret_cast<std::list<std::string>*>(value);   }
-    std::unordered_set<std::string>*     castSet()          const { return reinterpret_cast<std::unordered_set<std::string>*>(value);    }
-    //PSSET    castSortedSet()    const { return reinterpret_cast<PSSET>(value); }
-    std::unordered_map<std::string,std::string>*    castHash()         const { return reinterpret_cast<std::unordered_map<std::string,std::string>*>(value);   }
-   
-private:
-    void moveFrom(YObject&& obj);
-    void freeValue();
-};
 
 using YDB = std::unordered_map<std::string, YObject>;
 const int kMaxDbNum = 65536;
-
 
 class YStore
 {
@@ -151,5 +64,35 @@ private:
 };
 
 #define YSTORE YStore::Instance()
+
+template <typename HASH>
+inline typename HASH::const_local_iterator randomHashMember(const HASH& container)
+{
+    if (container.empty())
+    {
+        return typename HASH::const_local_iterator();
+    }
+    
+    while (true)
+    {
+        std::size_t bucket = random() % container.bucket_count();
+        if (container.bucket_size(bucket) == 0)
+        {
+            continue;
+        }
+        long lucky = random() % container.bucket_size(bucket);
+        typename HASH::const_local_iterator it = container.begin(bucket);
+        while (lucky > 0)
+        {
+            ++ it;
+            -- lucky;
+        }
+        
+        return it;
+    }
+        
+    return typename HASH::const_local_iterator();
 }
-#endif //!YEDIS_m_vecStoreH_
+
+}
+#endif //!YEDIS_STORE_H_

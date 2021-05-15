@@ -2,6 +2,7 @@
 #define _YEDIS_STRING_H_
 #include <string>
 #include "YedisStore.h"
+#include "YedisCommon.h"
 #include "../base/ReplyBuffer.h"
 
 namespace Yedis{
@@ -25,7 +26,6 @@ public:
 };
 
 }
-
 
 
 #endif //!_YEDIS_STRING_H_

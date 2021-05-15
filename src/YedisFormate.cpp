@@ -40,6 +40,24 @@ std::size_t YedisFormate::formatSingle(const std::string& str, ReplyBuffer* repl
 {
     return formatSingle(str.c_str(), str.size(), reply);
 }
+
+std::size_t YedisFormate::preFormatMultiBulk(std::size_t nBulk, ReplyBuffer* reply)
+{
+    if (!reply)
+    {
+        return 0;
+    }
+
+    std::size_t  oldSize = reply->readableSize();
+    reply->pushData("*", 1);
+
+    char val[32];
+    int tmp = snprintf(val, sizeof val - 1, "%lu\r\n", nBulk);
+    reply->pushData(val, tmp);
+
+    return reply->readableSize() - oldSize;
+}
+
 std::size_t YedisFormate::formatBulk(const char* str, std::size_t len, ReplyBuffer* reply)
 {
     if (!reply)
