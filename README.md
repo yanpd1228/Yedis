@@ -3,7 +3,7 @@
 C++ 实现的redis
 本项目是自己想学习C++11的练手作品，本来只打算仿照陈硕先生的muduo做一个网络库，但是在写的过程中了解了redis的一些数据，所以基于C++的STL容器实现了Redis的数据结构,并实现了部分Redis命令，
 项目完全兼容Redis协议，暂未实现Redis的设置key过期的功能。
-其中Redis的string是用std::string实现的，list是std::list,set对应std::unorded_set,hash对应std::unorded_map,sorted_set主要就是两个映射：**从分数可以查成员名字，**
+其中Redis的string是用std::string实现的，list是std::list,set对应std::unorded_set,hash对应std::unorded_map,zset主要就是两个映射：**从分数可以查成员名字，**
 **从名字也可以反查分数**。其中前者要求有序，所以用map，Redis用了跳表也是有序。后者无序，所以std::unoderd_map即可，类似Redis的dict。
 
 具体对应如下：
@@ -13,7 +13,7 @@ string <-> std::string;
 list <-> std::list;
 set <-> std::unordered_set;
 hash <-> std::unordered_map;
-sorted_set 是自己实现的一个类，主要有两个成员变量map和std::unoderd_map
+zet 是自己实现的一个类，主要有两个成员变量map和std::unoderd_map
 ```
 
 其中项目本质上是使用了一个大的hash表来存储数据，主要结构是std::unordered_map<std::string, YObject>，其中Yobjct类似Redis的redisObject大致结构如下
@@ -39,7 +39,7 @@ string：set，get，setnx
 list：LPUSH，RPUSH，LPUSHX，RPUSHX，LPOP，RPOP，LLEN，LRANGE
 set：SADD，SCARD，SMEMBER，SPOP
 hash：HGET，HSET
-sortedset：ZADD
+zset：ZADD
 ```
 
 协议解析流程如下在YedisParser.cpp中：
